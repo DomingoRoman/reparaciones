@@ -1,0 +1,235 @@
+Extraccion de datos
+
+directorio$ = "/Users/historiadores/Desktop/diana/"
+
+#Crear un objeto string con los nombre de todos los archivos textGrid (que terminan en ".TextGrid").
+lista_tg = Create Strings as file list: "lista_tg", directorio$ + "\*.TextGrid"
+nTotaltg = Get number of strings
+
+
+#Crear un objeto string con los nombre de todos los archivos de sonido (que terminan en ".wav").
+lista_sonido = Create Strings as file list: "lista_sonido", directorio$ + "/*.wav"
+nTotalSonido = Get number of strings
+
+estrato_sil = 1
+estrato_voc = 2
+estrato_lg = 3
+estrato_fraseo = 4
+estrato_tobi = 5
+
+for i to nTotalSonido
+	selectObject: lista_sonido
+	nombreaudio$  = Get string: i
+
+	ultimos$ = right$ (nombreaudio$, 4)
+	nombreaudio2$ = nombreaudio$ - ultimos$
+
+	textgrid$ = nombreaudio2$ + ".TextGrid"
+	pitch$ = nombreaudio$ + ".Pitch"
+	appendInfoLine: nombreaudio2$
+
+	audio = Read from file: directorio$ + nombreaudio2$ + ".wav"
+	textgrid = Read from file: directorio$ + textgrid$
+
+	selectObject: audio, textgrid
+	View & Edit
+
+
+
+###################################
+### extrae informacion codificada en el nombre del archivo
+###################################
+
+	largo_nombre = length(textgrid$)
+
+	ciudad$ = left$ (textgrid$,3)
+	sexo$ = mid$(textgrid$,5,1)
+	edad$ = mid$ (textgrid$, 6,1)
+	estrato$ = mid$ (textgrid$, 7,1)
+	n_informante$ = mid$(textgrid$,9,1)
+	prueba$ = mid$(textgrid$,11,4)
+	frase$ = mid$ (textgrid$, 16, 6)
+
+	appendInfoLine:  largo_nombre, tab$, textgrid$
+
+	#selectObject: textgrid, audio
+ 	#View & Edit
+	selectObject: audio
+
+	intensidad = To Intensity: 100, 0, "yes"
+
+selectObject: audio
+
+if sexo$ = "M"
+	superior = 500
+	inferior = 70
+elsif sexo$ = "F"
+	superior = 750
+	inferior = 100
+endif
+
+# Crea el objeto PICTH
+tono = To Pitch: 0, inferior, superior
+
+lista_pitch =  Create Strings as file list: "lista_pitch", directorio$ + "\*.Pitch"
+nTotalPitch = Get number of strings
+
+appendInfoLine: nTotalPitch, tab$, nTotalSonido, tab$, nTotaltg
+
+#########
+
+
+select textgrid
+
+prueba = Is interval tier... estrato_voc
+
+if prueba = 1
+	exit El estrato debe ser de punto'newline$'
+endif
+
+puntos = Get number of points... 2
+puntos_lg = Get number of points... 3
+puntos_fraseo = Get number of points... 4
+puntos_tobi = Get number of points... 5
+
+writeInfoLine: puntos,tab$,puntos_lg,tab$,puntos_fraseo,tab$,puntos_tobi
+
+pause
+
+#appendInfoLine: silaba, tab$,puntos, tab$,puntos_lg, tab$, puntos_fraseo, tab$,puntos_tobi
+
+###################################
+#### Creación de tabla con datos especificos
+###################################
+
+
+selectObject: textgrid
+estrato_sil = 1
+silaba = Get number of intervals... estrato_sil
+
+for i to silaba
+selectObject: textgrid
+		etiqueta2$ = Get label of interval... estrato_sil i
+			if etiqueta2$ != ""
+		ti= Get starting point... estrato_sil i
+		tf = Get end point... estrato_sil i
+		dur_sil = tf-ti
+			dur_sil = dur_sil*1000
+		appendInfoLine: silaba, tab$, etiqueta2$, tab$, dur_sil
+			endif
+endfor
+
+
+tablaValEsp = Create Table with column names: textgrid$, silaba, "audio silaba duracion_sil_[ms] intensidad_sil F0_sil vocal tiempo F0_i F0_c F0_p F0_f dB_i dB_ c dB_ p  dB_f  stX Sp_ToBI ciudad sexo edad estrato n_informante prueba frase"
+
+for i to puntos
+	select textgrid
+		tiempo = Get time of point... 2 i
+		etiqueta$ = Get label of point... 2 i
+	select tablaValEsp
+		Set string value: i, "vocal", etiqueta$
+		Set numeric value: i, "tiempo", tiempo
+endfor
+
+pause probando
+
+# pendiente
+		etiqueta2$ = Get label of interval... 1 i
+		etiqueta3$ = Get label of point... 5 i
+		ubicacion_tiempo2 = Get time of point... 3 i
+		puntos = Get number of points... 3
+
+	select tablaValEsp
+		Set string value: i, "audio", nombreaudio2$
+		Set string value: i, "silaba", etiqueta2$
+		Set numeric value: i, "duracion_sil_[ms]", dur_sil
+		#Set string value: i, "intensidad_sil", $
+		#Set string value: i, "F0_sil", F0_sil$
+
+		#Set string value: i, "F0_i", $
+		#Set string value: i, "F0_c", $
+		#Set string value: i, "F0_p", $ 
+		#Set string value: i, "F0_f", $
+		#Set string value: i, "dB_i", $
+		#Set string value: i, " dB_c", $
+		#Set string value: i, " dB_p", $ 
+		#Set string value: i, " dB_f", $
+ 		#Set string value: i, "stX", $stX 
+		Set string value: i, "Sp_ToBI", etiqueta3$
+		Set string value: i, "ciudad", ciudad$
+		Set string value: i, "sexo", sexo$
+		Set string value: i, "edad", edad$
+		Set string value: i, "estrato", estrato$
+		Set string value: i, "n_informante", n_informante$
+		Set string value: i, "prueba", prueba$
+		Set string value: i, "frase", frase$
+#tablaValEsp = Create Table with column names: textgrid$, puntos, "audio silaba duracion_sil_[ms] intensidad_sil F0_sil vocal ubicacion_tiempo F0_i F0_c F0_p F0_f Sp_ToBI ciudad sexo edad estrato n_informante prueba frase"
+
+endfor
+
+
+###Parte del profe
+#select textgrid
+
+#for i to puntos
+##selecciona el textgrid
+	#select textgrid
+#### obtiene el tiempo de la marca "i"
+	#tiempopunto = Get time of point: 3, i
+#### obtiene la etiqueta de la marca "i"
+	#etiquetapunto$ = Get label of point: 3, i
+#### selecciona el objeto Intensity llamado "intensidad"
+	#select intensidad
+#### obtiene el valor en dB en el objeto intensidad en el tiempo i
+	#dBpunto = Get value at time: tiempopunto, "Cubic"
+#### selecciona la tabla y pone los valores
+	select tablaValEsp
+	#Set string value: i, "archivo", textgrid$
+	#Set string value: i, "cepifin", etiquetapunto$
+	#Set numeric value: i, "tiempo", tiempopunto
+	#Set numeric value: i, "dB", dBpunto
+#duracion_sonido = Get total duration
+
+
+	#select tono
+		#f0 = Get value at time... tiempo Hertz Linear
+### Quiebra ejecución del script
+### para iniciarlo de nuevo
+			#if f0 = undefined
+			#pauseScript: "Corrija::::  ",etiqueta$," en tiempo::: ",tiempo
+			#endif
+
+
+		
+
+
+
+
+#################################################################
+## SALVACIÓN DE OBJETOS ##
+#################################################################
+# Salvado de objetos
+select tablaValEsp
+extensionTabla_E$ = "_Espe.Table"
+nombreTabla_E$= nombreaudio2$ + extensionTabla_E$
+Save as text file: directorio$ + nombreTabla_E$
+
+# Salvado de objetos
+#select tablaValGenerales
+#extensionTabla_G$ = "_Gene.Table"
+#nombreTabla_G$= nombreBase$ + extensionTabla_G$
+#Save as text file: directorioOriginalSonidos$ + "/generales/" + nombreTabla_G$
+
+selectObject: textgrid
+Save as text file: directorio$ + textgrid$
+#selectObject: pitch
+#Save as text file: directorioOriginalSonidos$ + "\" + pitch$
+
+removeObject: textgrid
+removeObject: audio
+removeObject: tono
+removeObject: tablaValEsp
+#removeObject: tablaValGenerales
+#removeObject: tier_tono_Hz 
+
+#removeObject: textGrid, sonido, pitch, tablaValEsp, tablaValGenerales, tier_tono_Hz 
